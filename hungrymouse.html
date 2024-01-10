@@ -22,6 +22,10 @@
       display: none;
     }
 
+    #cheese-image {
+      display: none;
+    }
+
     #send-button {
       background-color: #b72424;
       color: white;
@@ -41,21 +45,29 @@
   <div id="container">
     <canvas id="canvas" width="800" height="600"></canvas>
     <img src="assets/mouse.png" alt="mouse" id="mouse-image">
+    <img src="assets/cheese.png" alt="cheese" id="cheese-image">
   </div>
 
   <script>
     var canvas = document.getElementById('canvas');
     var ctx = canvas.getContext('2d');
 
-    var img = document.getElementById('mouse-image');
+    var mouse = document.getElementById('mouse-image');
+    var cheese = document.getElementById('cheese-image');
     var imgWidth = 140;
     var imgHeight = 140;
 
-    img.onload = function () {
+    var cheesePosition = { x: canvas.width - imgWidth - 50, y: canvas.height / 2 - imgHeight / 2 };
+
+    mouse.onload = function () {
       position.x = 50;
       // position.x = canvas.width / 2 - imgWidth / 2;
       position.y = canvas.height / 2 - imgHeight / 2;
-      ctx.drawImage(img, position.x, position.y, imgWidth, imgHeight);
+      ctx.drawImage(mouse, position.x, position.y, imgWidth, imgHeight);
+    }
+
+    cheese.onload = function () {
+      ctx.drawImage(cheese, cheesePosition.x, cheesePosition.y, imgWidth, imgHeight);
     }
 
     var position = { x: 0, y: 0 };
@@ -68,11 +80,13 @@
       var dy = y - position.y - imgHeight / 2;
       var distance = Math.sqrt(dx * dx + dy * dy);
 
-      // Only start dragging if the cursor is within 50 pixels from the center of the image
+      // Only start dragging if the cursor is within 100 pixels from the center of the image
       if (distance < 100) {
         dragging = true;
       }
     }
+
+    var cheeseVisible = true
 
     canvas.onmousemove = function (e) {
       if (dragging) {
@@ -81,7 +95,18 @@
         position = { x: x - imgWidth / 2, y: y - imgHeight / 2 };
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, position.x, position.y, imgWidth, imgHeight);
+        // Check if the mouse image has reached the cheese image
+        if (Math.abs(position.x - cheesePosition.x) < imgWidth && Math.abs(position.y - cheesePosition.y) < imgHeight) {
+          // If it has, set the flag to false
+          cheeseVisible = false;
+          cheese.remove();
+        }
+
+        // Only redraw the cheese image if the flag is true
+        if (cheeseVisible) {
+          ctx.drawImage(cheese, cheesePosition.x, cheesePosition.y, imgWidth, imgHeight);
+        }
+        ctx.drawImage(mouse, position.x, position.y, imgWidth, imgHeight);
         console.log(`Image position: x=${position.x}, y=${position.y}`);
       }
     }

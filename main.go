@@ -81,6 +81,21 @@ func DragElement(ctx context.Context, initialX, initialY, finalX, finalY, factor
 	return nil
 }
 
+func IsCheeseFound(ctx context.Context) (bool, error) {
+	// find the cheese by getting it by "cheese-image" id
+	var cheeseFound bool = false
+	if err := chromedp.Run(ctx,
+		chromedp.Evaluate(`(function() {
+			const cheese = document.getElementById("cheese-image");
+			return cheese !== null;
+		})();`, &cheeseFound),
+	); err != nil {
+		return false, err
+	}
+
+	return cheeseFound, nil
+}
+
 func StartAutomation(dir string) error {
 	// take url from command line
 	if len(os.Args) < 2 {
@@ -124,10 +139,10 @@ func StartAutomation(dir string) error {
 	}
 	delay(ctx, 2*time.Second)
 
-	var times int = 10
-	var factor float64 = 90
+	// var times int = 10
+	var factor float64 = 80
 
-	for i := 0; i < times; i++ {
+	for {
 		// Get Mouse Position
 		x, y, err := GetMousePosition(ctx)
 		if err != nil {
@@ -139,6 +154,22 @@ func StartAutomation(dir string) error {
 		if err != nil {
 			return err
 		}
+		delay(ctx, 150*time.Millisecond)
+
+		// Check if cheese is found
+		cheeseFound, err := IsCheeseFound(ctx)
+		if err != nil {
+			return err
+		}
+
+		if !cheeseFound {
+			fmt.Println("Cheese has been eaten")
+			break
+		}
+
+		fmt.Println("Cheese Not Found")
+
+		// TODO keep moving the mouse until we find cheese
 	}
 
 	delay(ctx, 5*time.Second)
@@ -159,10 +190,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}("dir1")
-	// go func(dir string) {
-	// 	defer wg.Done()
-	// 	StartAutomation(dir)
-	// }("dir2")
 
 	wg.Wait()
 
