@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -125,24 +124,16 @@ func IsCheeseFound(ctx context.Context) (bool, error) {
 	return cheeseFound, nil
 }
 
-func StartAutomation(dir string) error {
+func StartAutomation() error {
 	// take url from command line
 	if len(os.Args) < 2 {
 		fmt.Println("Please provide url")
 		os.Exit(1)
 	}
 
-	// set up a new Chrome instance
-	dir, err := os.MkdirTemp("", dir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
 	opts := append(
 		chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.DisableGPU,
-		chromedp.UserDataDir(dir),
 		chromedp.Flag("headless", false),
 		chromedp.Flag("window-size", "1920,1080"),
 	)
@@ -162,7 +153,7 @@ func StartAutomation(dir string) error {
 
 	fmt.Println("Opening Hungry Mouse")
 	url := os.Args[1]
-	err = chromedp.Run(ctx, chromedp.Navigate(url))
+	err := chromedp.Run(ctx, chromedp.Navigate(url))
 	if err != nil {
 		return err
 	}
@@ -230,20 +221,8 @@ func StartAutomation(dir string) error {
 }
 
 func main() {
-	// start 2 instances of Chrome using goroutines
-
-	var wg sync.WaitGroup
-
-	// 2 goroutines
-	wg.Add(1)
-	go func(dir string) {
-		defer wg.Done()
-		err := StartAutomation(dir)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}("dir1")
-
-	wg.Wait()
-
+	err := StartAutomation()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
