@@ -30,8 +30,8 @@ func GetMousePosition(ctx context.Context) (float64, float64, error) {
 		chromedp.Evaluate(`(function() {
 			const canvasRect = canvas.getBoundingClientRect();
 
-			var imageCenterX = canvasRect.left + position.x + imgWidth / 2;
-			var imageCenterY = canvasRect.top + position.y + imgHeight / 2;
+			var imageCenterX = canvasRect.left + position.x + mouseWidth / 2;
+			var imageCenterY = canvasRect.top + position.y + mouseHeight / 2;
 
 			return { imageCenterX, imageCenterY };
         })();`, &imageInfo),
@@ -53,8 +53,8 @@ func GetCheesePosition(ctx context.Context) (float64, float64, error) {
 		chromedp.Evaluate(`(function() {
 			const canvasRect = canvas.getBoundingClientRect();
 
-			var imageCenterX = canvasRect.left + cheesePosition.x + imgWidth / 2;
-			var imageCenterY = canvasRect.top + cheesePosition.y + imgHeight / 2;
+			var imageCenterX = canvasRect.left + cheesePosition.x + cheeseWidth / 2;
+			var imageCenterY = canvasRect.top + cheesePosition.y + cheeseHeight / 2;
 
 			return { imageCenterX, imageCenterY };
         })();`, &imageInfo),
@@ -174,7 +174,7 @@ func StartAutomation() error {
 		return err
 	}
 
-	fmt.Println("Clicking Submit button")
+	fmt.Println("Clicking Let me eat button")
 	err = chromedp.Run(ctx, chromedp.Click(`#submit-button`))
 	if err != nil {
 		return err
