@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"sync"
 	"time"
@@ -45,6 +46,29 @@ func GetMousePosition(ctx context.Context) (float64, float64, error) {
 	return x, y, nil
 }
 
+func GetCheesePosition(ctx context.Context) (float64, float64, error) {
+	// Execute JavaScript to get coordinates of cheese
+	var imageInfo map[string]float64
+
+	if err := chromedp.Run(ctx,
+		chromedp.Evaluate(`(function() {
+			const canvasRect = canvas.getBoundingClientRect();
+
+			var imageCenterX = canvasRect.left + cheesePosition.x + imgWidth / 2;
+			var imageCenterY = canvasRect.top + cheesePosition.y + imgHeight / 2;
+
+			return { imageCenterX, imageCenterY };
+        })();`, &imageInfo),
+	); err != nil {
+		return 0, 0, err
+	}
+
+	x := imageInfo["imageCenterX"]
+	y := imageInfo["imageCenterY"]
+
+	return x, y, nil
+}
+
 func DragElement(ctx context.Context, initialX, initialY, finalX, finalY, factor float64) error {
 	// A drag consists of 3 events: mouse pressed, mouse moved, mouse released
 	p := &input.DispatchMouseEventParams{
@@ -60,17 +84,22 @@ func DragElement(ctx context.Context, initialX, initialY, finalX, finalY, factor
 		return errors.Wrap(err, "could not do left-click on mouse")
 	}
 
+	p.X = finalX
+	p.Y = finalY
+	steps := int(math.Max(math.Abs(finalX-initialX), math.Abs(finalY-initialY)) / factor)
+
 	// Mouse Move
 	p.Type = input.MouseMoved
-	if finalX > 0 {
-		p.X = initialX + factor
-	}
-	if finalY > 0 {
-		p.Y = initialY + factor
-	}
+	for i := 1; i <= steps; i++ {
+		p.X = initialX + (finalX-initialX)*float64(i)/float64(steps)
+		p.Y = initialY + (finalY-initialY)*float64(i)/float64(steps)
 
-	if err := p.Do(cdp.WithExecutor(ctx, c.Target)); err != nil {
-		return errors.Wrap(err, "could not move mouse")
+		if err := p.Do(cdp.WithExecutor(ctx, c.Target)); err != nil {
+			return errors.Wrap(err, "could not move mouse")
+		}
+
+		// Add a delay to make the movement smoother
+		time.Sleep(time.Millisecond * 80)
 	}
 
 	p.Type = input.MouseReleased
@@ -139,40 +168,64 @@ func StartAutomation(dir string) error {
 	}
 	delay(ctx, 2*time.Second)
 
+	// Find the email input field by CSS selector
+	inputSelector := `input#cheese-count`
+	err = chromedp.Run(ctx, chromedp.Focus(inputSelector))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Filling in cheese slice count")
+	// Fill in the email field
+	var cheeseCount string = "5"
+	err = chromedp.Run(ctx, chromedp.SendKeys(inputSelector, cheeseCount))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Clicking Submit button")
+	err = chromedp.Run(ctx, chromedp.Click(`#submit-button`))
+	if err != nil {
+		return err
+	}
+
 	// var times int = 10
-	var factor float64 = 80
+	var factor float64 = 50
 
 	for {
-		// Get Mouse Position
-		x, y, err := GetMousePosition(ctx)
-		if err != nil {
-			return err
-		}
-
-		// Drag Element
-		err = DragElement(ctx, x, y, x, 0, factor)
-		if err != nil {
-			return err
-		}
-		delay(ctx, 150*time.Millisecond)
-
-		// Check if cheese is found
 		cheeseFound, err := IsCheeseFound(ctx)
 		if err != nil {
 			return err
 		}
 
 		if !cheeseFound {
-			fmt.Println("Cheese has been eaten")
+			fmt.Println("I am full 🐭, no more cheese")
 			break
 		}
 
-		fmt.Println("Cheese Not Found")
+		// Get Mouse Position
+		mouseX, mouseY, err := GetMousePosition(ctx)
+		if err != nil {
+			return err
+		}
 
-		// TODO keep moving the mouse until we find cheese
+		// Get Cheese Position
+		cheeseX, cheeseY, err := GetCheesePosition(ctx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("There is cheese at x:%v, y:%v\n", cheeseX, cheeseY)
+
+		// Drag Element
+		err = DragElement(ctx, mouseX, mouseY, cheeseX, cheeseY, factor)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("There is still cheese 🧀 left")
 	}
 
-	delay(ctx, 5*time.Second)
+	delay(ctx, 3*time.Second)
 	return nil
 }
 
