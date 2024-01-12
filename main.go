@@ -125,8 +125,8 @@ func IsCheeseFound(ctx context.Context) (bool, error) {
 
 func StartAutomation() error {
 	// take url from command line
-	if len(os.Args) < 2 {
-		log.Println("Please provide url")
+	if len(os.Args) < 3 {
+		log.Println("Please provide url, and slice count as arguments")
 		os.Exit(1)
 	}
 
@@ -158,25 +158,11 @@ func StartAutomation() error {
 	}
 	delay(ctx, 2*time.Second)
 
-	// Find the email input field by CSS selector
-	inputSelector := `input#cheese-count`
-	err = chromedp.Run(ctx, chromedp.Focus(inputSelector))
-	if err != nil {
-		return err
-	}
-
-	log.Println("Filling in cheese slice count")
-	// Fill in the email field
-	var cheeseCount string = "5"
-	err = chromedp.Run(ctx, chromedp.SendKeys(inputSelector, cheeseCount))
-	if err != nil {
-		return err
-	}
-
-	log.Println("Clicking Let me eat button")
-	err = chromedp.Run(ctx, chromedp.Click(`#submit-button`))
-	if err != nil {
-		return err
+	// Start Game
+	c := chromedp.FromContext(ctx)
+	tasks := StartGame(url, os.Args[2])
+	if err := tasks.Do(cdp.WithExecutor(ctx, c.Target)); err != nil {
+		return errors.Wrap(err, "could not start game")
 	}
 
 	// var times int = 10
@@ -216,6 +202,15 @@ func StartAutomation() error {
 	log.Println("Closing Chrome")
 	delay(ctx, 2*time.Second)
 	return nil
+}
+
+func StartGame(url string, sliceCount string) chromedp.Tasks {
+	return chromedp.Tasks{
+		chromedp.Navigate(url),
+		chromedp.Focus("input#cheese-count"),
+		chromedp.SendKeys("input#cheese-count", sliceCount),
+		chromedp.Click("#submit-button"),
+	}
 }
 
 func main() {
