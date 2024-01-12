@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math"
 	"os"
@@ -127,7 +126,7 @@ func IsCheeseFound(ctx context.Context) (bool, error) {
 func StartAutomation() error {
 	// take url from command line
 	if len(os.Args) < 2 {
-		fmt.Println("Please provide url")
+		log.Println("Please provide url")
 		os.Exit(1)
 	}
 
@@ -151,7 +150,7 @@ func StartAutomation() error {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Opening Hungry Mouse")
+	log.Println("Opening Hungry Mouse")
 	url := os.Args[1]
 	err := chromedp.Run(ctx, chromedp.Navigate(url))
 	if err != nil {
@@ -166,7 +165,7 @@ func StartAutomation() error {
 		return err
 	}
 
-	fmt.Println("Filling in cheese slice count")
+	log.Println("Filling in cheese slice count")
 	// Fill in the email field
 	var cheeseCount string = "5"
 	err = chromedp.Run(ctx, chromedp.SendKeys(inputSelector, cheeseCount))
@@ -174,7 +173,7 @@ func StartAutomation() error {
 		return err
 	}
 
-	fmt.Println("Clicking Let me eat button")
+	log.Println("Clicking Let me eat button")
 	err = chromedp.Run(ctx, chromedp.Click(`#submit-button`))
 	if err != nil {
 		return err
@@ -190,7 +189,7 @@ func StartAutomation() error {
 		}
 
 		if !cheeseFound {
-			fmt.Println("I am full 🐭, no more cheese")
+			log.Println("I am full 🐭, no more cheese")
 			break
 		}
 
@@ -205,18 +204,17 @@ func StartAutomation() error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("There is cheese at x:%v, y:%v\n", cheeseX, cheeseY)
+		log.Printf("There is still cheese 🧀 left at x:%v, y:%v\n", cheeseX, cheeseY)
 
 		// Drag Element
 		err = DragElement(ctx, mouseX, mouseY, cheeseX, cheeseY, factor)
 		if err != nil {
 			return err
 		}
-
-		fmt.Println("There is still cheese 🧀 left")
 	}
 
-	delay(ctx, 3*time.Second)
+	log.Println("Closing Chrome")
+	delay(ctx, 2*time.Second)
 	return nil
 }
 
