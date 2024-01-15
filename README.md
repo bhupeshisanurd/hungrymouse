@@ -3,6 +3,10 @@
 A simple display of web automation using Chromedp & Go.
 
 
+
+https://github.com/bhupeshisanurd/hungrymouse/assets/122530514/05ebc479-eb84-4f16-8a1a-db146265faf6
+
+
 ## Running the demo
 
 ```bash
