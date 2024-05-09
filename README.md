@@ -10,7 +10,9 @@ https://github.com/bhupeshisanurd/hungrymouse/assets/122530514/05ebc479-eb84-4f1
 ## Running the demo
 
 ```bash
-go run main.go <URL to Game> <Cheese Slice Count> 
+go run main.go <URL to Game> <Cheese Slice Count>
+# or
+go run https://hungrymouse-bhupeshisanurd-main.buildndeploy.co/ 20
 ```
 
 ## What is this?
